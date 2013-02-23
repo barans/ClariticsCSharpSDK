@@ -16,18 +16,18 @@ namespace ClariticsSDK
         {
             this.ApiKey = apiKey;
             this.Url = https ? "https://data2.claritics.com/load/data/" : "http://data2.claritics.com/load/data/";
-            Console.WriteLine("constructor çağrıldı");
         }
 
         private ulong UnixTime()
         {
             DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0);
             TimeSpan span = DateTime.UtcNow.Subtract(unixEpoch);
-            return Convert.ToUInt64(span.TotalMilliseconds);
+            return Convert.ToUInt64(span.TotalSeconds);
         }
         
         private void CurlPostData(string json)
         {
+            Console.WriteLine(json);
             try
             {
                 WebRequest request = WebRequest.Create(this.Url);
@@ -38,8 +38,6 @@ namespace ClariticsSDK
                 Stream dataStream = request.GetRequestStream();
                 dataStream.Write(byteArray, 0, byteArray.Length);
                 dataStream.Close();
-                Console.WriteLine(json);
-                Console.WriteLine("---------------------------------------");
             }
             catch (Exception ex)
             {
@@ -103,7 +101,7 @@ namespace ClariticsSDK
             this.CurlPostData(serializer.Serialize(fs).Replace("\\\\", ""));
         }
 
-        public void AcceptGift(string userId, int sessionId, int playerLevel, string itemId, string senderId, ulong delayInMilliSeconds)
+        public void AcceptGift(string userId, int sessionId, int playerLevel, string itemId, string senderId, ulong delayInSeconds)
         {
 
             var serializer = new JavaScriptSerializer();
@@ -111,7 +109,7 @@ namespace ClariticsSDK
             data.Add("playerLevel", playerLevel);
             data.Add("itemId", itemId);
             data.Add("sender", senderId);
-            data.Add("delay", delayInMilliSeconds);
+            data.Add("delay", delayInSeconds);
 
 
             var rows = new List<Dictionary<string, object>>();
@@ -158,14 +156,14 @@ namespace ClariticsSDK
             this.CurlPostData(serializer.Serialize(fs));
         }
 
-        public void WallPostAccepted(string userId, int sessionId, int playerLevel, string wallpostType, string senderId, ulong delayInMilliSeconds)
+        public void WallPostAccepted(string userId, int sessionId, int playerLevel, string wallpostType, string senderId, ulong delayInSeconds)
         {
             var serializer = new JavaScriptSerializer();
             var data = new Dictionary<string, object>();
             data.Add("playerLevel", playerLevel);
             data.Add("postType", wallpostType);
             data.Add("sender", senderId);
-            data.Add("delay", delayInMilliSeconds);
+            data.Add("delay", delayInSeconds);
 
             var rows = new List<Dictionary<string, object>>();
 
@@ -211,14 +209,14 @@ namespace ClariticsSDK
             this.CurlPostData(serializer.Serialize(fs).Replace("\\\\", ""));
         }
 
-        public void RequestAccepted(string userId, int sessionId, int playerLevel, string requestType, string senderId, ulong delayInMilliSeconds)
+        public void RequestAccepted(string userId, int sessionId, int playerLevel, string requestType, string senderId, ulong delayInSeconds)
         {
             var serializer = new JavaScriptSerializer();
             var data = new Dictionary<string, object>();
             data.Add("playerLevel", playerLevel);
             data.Add("postType", requestType);
             data.Add("sender", senderId);
-            data.Add("delay", delayInMilliSeconds);
+            data.Add("delay", delayInSeconds);
 
             var rows = new List<Dictionary<string, object>>();
 
@@ -454,7 +452,7 @@ namespace ClariticsSDK
             var serializer = new JavaScriptSerializer();
             var data = new Dictionary<string, object>();
             data.Add("playerLevel", playerLevel);
-            data.Add("paymentType", playerLevel);
+            data.Add("paymentType", paymentType);
             data.Add("success", success);
             data.Add("amount", amount);
             data.Add("currency", currencyName);
@@ -509,6 +507,35 @@ namespace ClariticsSDK
             this.CurlPostData(serializer.Serialize(fs));
         }
 
-        //TODO: Custom event fonksiyonu da eklenecek bir örnek clariticsden açılıp bakılacak
+        public void CustomEvent(string userId, int sessionId, int playerLevel, int customEventCode, Dictionary<string, object> custDataItem)
+        {
+            var serializer = new JavaScriptSerializer();
+            var data = new Dictionary<string, object>();
+            data.Add("playerLevel", playerLevel);
+            var custData = new List<Dictionary<string, object>>();
+            
+            custData.Add(custDataItem);
+
+
+            data.Add("customData", serializer.Serialize(custData));
+
+
+            var rows = new List<Dictionary<string, object>>();
+
+            var item = new Dictionary<string, object>();
+            item.Add("data", serializer.Serialize(data));
+            item.Add("timeInMillis", this.UnixTime());
+            item.Add("playerId", userId);
+            item.Add("actionType", customEventCode);
+            item.Add("sessionId", sessionId);
+
+            rows.Add(item);
+
+            var fs = new Dictionary<string, object>();
+            fs.Add("rows", rows);
+            fs.Add("authCode", this.ApiKey);
+
+            this.CurlPostData(serializer.Serialize(fs).Replace("\\\\", ""));
+        }
     }
 }
